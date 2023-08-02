@@ -1,20 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, Button, FlatList, ActivityIndicator, SafeAreaView } from 'react-native';
 import firebase from './src/firebase'
+
+import Login from './src/components/Login';
 
 
 export default function App() {
+  const[user, setUser] = useState(null)
+
+
+  if(!user) {
+    return <Login />
+  }
+
   return(
-    <View style={styles.container}>
-      <Text>Ola mundo</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text>DENTRO DA TELA DE TAREFAS</Text>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 36
+    paddingTop: 32,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFAFA'
   }
 })
 
