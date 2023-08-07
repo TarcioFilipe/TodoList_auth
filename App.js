@@ -1,21 +1,92 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList, ActivityIndicator, SafeAreaView } from 'react-native';
-import firebase from './src/firebase'
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  FlatList, 
+  ActivityIndicator, 
+  SafeAreaView, 
+  TouchableOpacity ,
+  Keyboard
+} 
+from 'react-native';
 
+import TaskList from './src/components/TaskList';
+
+import firebase from './src/firebase'
 import Login from './src/components/Login';
 
 
 export default function App() {
   const[user, setUser] = useState(null)
+  const[newTask, setNewTask] = useState('')
+  const[tasks, setTasks] = useState([])
 
+
+  function handleDelete(key) {
+    console.log(key)
+  }
+
+  function handleEdit(data) {
+    console.log('item cliclado', data)
+  }
+
+  function handleAdd() {
+    if(newTask === '') {
+      return
+    }
+
+    let tarefas = firebase.database().ref('tarefas').child(user)
+    let chave = tarefas.push().key
+
+    tarefas.child(chave).set({
+      terefa: newTask
+    })
+    .then( () => {
+      console.log('TAREFA CRIADA')
+
+      const data = {
+        key: chave,
+        tarefa: newTask
+      }
+      setTasks(oldTasks => [...oldTasks, data])
+    })
+    Keyboard.dismiss();
+    setNewTask('')
+
+
+
+  }
 
   if(!user) {
-    return <Login />
+    return <Login changeStatus={(user) => setUser(user) } />
   }
 
   return(
     <SafeAreaView style={styles.container}>
-      <Text>DENTRO DA TELA DE TAREFAS</Text>
+
+      <View style={styles.containerInput}>
+        <TextInput
+        style={styles.input}
+        placeholder='Sua tarefa aqui'
+        value={newTask}
+        onChangeText={(text) => setNewTask(text)}
+        />
+
+        <TouchableOpacity style={styles.btnAdd} onPress={handleAdd}>
+          <Text style={styles.btnText}>+</Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList 
+      data={tasks}
+      keyExtractor={ item => item.key }
+      renderItem={ ({ item }) => (
+        <TaskList data={item} deleteItem={ handleDelete } editItem={ handleEdit } />
+      )}
+      />
+
     </SafeAreaView>
   )
 }
@@ -23,11 +94,40 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 32,
+    paddingTop: 72,
     paddingHorizontal: 12,
     backgroundColor: '#FFFAFA'
+  },
+  containerInput: {
+    flexDirection: 'row'
+  },
+  input: {
+    flex: 1,
+    marginBottom: 24,
+    padding: 12,
+    backgroundColor: '#FFF',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#141414',
+    height: 48,
+  },
+  btnAdd: {
+    height: 48,
+    backgroundColor: '#141414',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4
+  },
+  btnText: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: 'bold'
   }
 })
+
+
 
 
 

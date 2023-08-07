@@ -1,15 +1,54 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Button, FlatList, ActivityIndicator, SafeAreaView, TouchableOpacity } from 'react-native';
+import { 
+  StyleSheet, 
+  Text, 
+  View, 
+  TextInput, 
+  SafeAreaView, 
+  TouchableOpacity 
+} from 'react-native';
+
+import firebase from '../../firebase';
 
 
 
-export default function Login() {
+export default function Login({ changeStatus }) {
+
+    const [type, setType] = useState('login')
+
     const [email, setEmai] = useState('')
     const [password, setPassword] = useState('')
 
 
-    function logar() {
+    function handleLogin() {
         
+      if (type === 'login') {
+        // LOGIN DE USUARIO
+
+        const user = firebase.auth().signInWithEmailAndPassword(email, password)
+        .then((user) => {
+          changeStatus(user.user.uid)
+        })
+        .catch((error) => {
+          console.log(error)
+          alert('Ops! algo deu errado')
+        })
+        return
+
+      } else {
+        //CADASTRO DE USUARIO
+
+        const user = firebase.auth().createUserWithEmailAndPassword(email, password)
+        .then((user) => {
+          changeStatus(user.user.uid)
+        })
+        .catch((error) => {
+          console.log(error)
+          alert('Ops! parece que deu algum erro')
+        })
+        return
+      }
+
     }
 
   return(
@@ -29,14 +68,21 @@ export default function Login() {
       />
 
       <TouchableOpacity 
-      style={styles.btnAcessar}
-      onPress={ logar }
+      style={[styles.btnAcessar, { backgroundColor: type === 'login' ? '#3ea6f2' : '#141414' } ]}
+      onPress={ handleLogin }
       >
-        <Text style={styles.textBtn}>Acessar</Text>
+        <Text style={styles.textBtn}>
+          { type === 'login' ? 'Acessar' : 'Cadastrar'}
+        </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={{height:56}}>
-        <Text style={{textAlign: 'center'}}>Criar um conta</Text>
+      <TouchableOpacity style={{height:56}} 
+      onPress={() => setType(type => type === 'login' ? 'Cadastrar' : 'login' )}
+      >
+
+        <Text style={{textAlign: 'center'}}>
+          {type === 'login' ? 'Criar uma conta' : 'Já Possuo uma conta'}
+        </Text>
       </TouchableOpacity>
 
     </SafeAreaView>
@@ -48,7 +94,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12,
     backgroundColor: '#FFFAFA',
-    justifyContent: 'center'
+    marginTop: 72
   },
   input: {
     height: 56,
@@ -60,7 +106,6 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   btnAcessar: {
-    backgroundColor: '#141414',
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
