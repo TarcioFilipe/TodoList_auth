@@ -10,7 +10,7 @@ export default function TaskList({ data, deleteItem, editItem}) {
 
             <View style={styles.areaText}>
                 <TouchableWithoutFeedback onPress={ () => editItem(data) }>
-                    <Text style={styles.textItem}>{data.tarefa}</Text>
+                    <Text style={styles.textItem}>{data.nome}</Text>
                 </TouchableWithoutFeedback>
             </View>
 
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     },
     textItem:{
         textAlign: 'left',
+        color: '#000'
     },
     areaText: {
         paddingRight: 4,

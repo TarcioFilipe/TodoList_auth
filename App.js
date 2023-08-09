@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -13,6 +13,7 @@ import {
 from 'react-native';
 
 import TaskList from './src/components/TaskList';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import firebase from './src/firebase'
 import Login from './src/components/Login';
@@ -22,42 +23,110 @@ export default function App() {
   const[user, setUser] = useState(null)
   const[newTask, setNewTask] = useState('')
   const[tasks, setTasks] = useState([])
+  const[key, setKey] = useState('')
+
+  const inputRef = useRef(null)
 
 
-  function handleDelete(key) {
-    console.log(key)
-  }
 
-  function handleEdit(data) {
-    console.log('item cliclado', data)
-  }
+  useEffect(() => {
+
+    function getUser(){
+
+      if(!user) {
+        return
+      }
+
+      firebase.database().ref('tarefas').child(user).once('value', (snapshot) => {
+        setTasks([])
+
+        snapshot?.forEach((childItem) => {
+          let data ={
+            key: childItem.key,
+            nome: childItem.val().nome
+          }
+
+          setTasks(oldTasks => [...oldTasks, data])
+        })
+
+      })
+
+    }
+
+    getUser()
+
+  }, [user])
+
 
   function handleAdd() {
     if(newTask === '') {
       return
     }
 
+    if(key !== '') {
+      firebase.database().ref('tarefas').child(user).child(key).update({
+        nome: newTask
+      })
+      .then(() => {
+        console.log('TAREFA ATUALIZADA')
+
+        const taskIndex = tasks.findIndex( item => item.key === key )
+        const taskClone =  tasks
+        taskClone[taskIndex].nome = newTask
+
+        setTasks([...taskClone])
+      })
+
+      Keyboard.dismiss()
+      setKey('')
+      setNewTask('')
+      return;
+    }
+
     let tarefas = firebase.database().ref('tarefas').child(user)
     let chave = tarefas.push().key
 
     tarefas.child(chave).set({
-      terefa: newTask
+      nome: newTask
     })
-    .then( () => {
+    .then(() => {
       console.log('TAREFA CRIADA')
-
       const data = {
         key: chave,
-        tarefa: newTask
+        nome: newTask
       }
+
       setTasks(oldTasks => [...oldTasks, data])
     })
+
     Keyboard.dismiss();
     setNewTask('')
-
-
-
   }
+
+  function handleDelete(key) {
+    firebase.database().ref('tarefas').child(user).child(key).remove()
+    .then(() => {
+      const findTasks = tasks.filter( item => item.key !== key)
+      setTasks(findTasks)
+    })
+  }
+
+  function handleEdit(data) {
+    setKey(data.key)
+    setNewTask(data.nome)
+    inputRef.current.focus();
+  }
+
+  function cancelEdit(){
+    setKey('')
+    setNewTask('')
+    Keyboard.dismiss()
+  }
+
+  function logout() {
+    setUser(null)
+  }
+
 
   if(!user) {
     return <Login changeStatus={(user) => setUser(user) } />
@@ -66,12 +135,23 @@ export default function App() {
   return(
     <SafeAreaView style={styles.container}>
 
+      { key.length > 0 && (
+        <View style={{flexDirection: 'row', marginBottom: 12}}>
+          <TouchableOpacity onPress={cancelEdit}>
+            <Ionicons name='close-circle-outline' size={20} color={'#F90000'}/>
+          </TouchableOpacity>
+          <Text style={{color: '#2d2d2d', marginLeft: 4}}>Editando uma tarefa!</Text>
+        </View>
+      )}
+
+
       <View style={styles.containerInput}>
         <TextInput
         style={styles.input}
         placeholder='Sua tarefa aqui'
         value={newTask}
         onChangeText={(text) => setNewTask(text)}
+        ref={inputRef}
         />
 
         <TouchableOpacity style={styles.btnAdd} onPress={handleAdd}>
@@ -86,6 +166,12 @@ export default function App() {
         <TaskList data={item} deleteItem={ handleDelete } editItem={ handleEdit } />
       )}
       />
+
+      <View style={styles.areaSair}>
+        <TouchableOpacity onPress={ logout }>
+          <Text style={{fontSize: 18}}>Sair</Text>
+        </TouchableOpacity>
+      </View>
 
     </SafeAreaView>
   )
@@ -124,6 +210,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 20,
     fontWeight: 'bold'
+  },
+  areaSair: {
+    flex: 1, 
   }
 })
 
